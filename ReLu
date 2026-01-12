@@ -1,0 +1,1 @@
+local R={}function R.r(H,p,h,r)return H*(h.CFrame^-1*p.CFrame)^-1*(r.CFrame^-1*h.CFrame)^-1 end return R
