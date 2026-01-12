@@ -1,0 +1,95 @@
+local P,R=game:GetService("Players"),game:GetService("RunService")
+local L=P.LocalPlayer
+local C=workspace.CurrentCamera
+local G={}
+local S={a=nil,b=nil,h=nil,i=false,f=nil,ct=nil,cf=nil,m="Move",sm=5,sr=5,se=true,re=true,s=1,cl=true,c={}}
+local rd=function(v,s)return(not s or s==0)and v or math.round(v/s)*s end
+local dr=math.rad
+local ec=function(x)if x then S.c[#S.c+1]=x end end
+local cc=function()for i=1,#S.c do local c=S.c[i]if c and c.Disconnect then pcall(function()c:Disconnect()end)end end S.c={}end
+local lc=function()if not S.cl or not C then return end S.ct=C.CameraType if S.ct~=Enum.CameraType.Scriptable then S.cf=C.CFrame C.CameraType=Enum.CameraType.Scriptable end end
+local uc=function()if not S.cl or not C then return end C.CameraType=S.ct or Enum.CameraType.Custom if S.ct==Enum.CameraType.Scriptable and S.cf then C.CFrame=S.cf end S.ct=nil S.cf=nil end
+local sd=function(x)if x and x.Destroy then pcall(function()x:Destroy()end)end end
+local bb=function(p)local b=Instance.new("Part")b.Transparency=1 b.Anchored=true b.CanCollide=false b.Size=p.Size b.CFrame=p.CFrame b.Parent=workspace return b end
+local sh=function(p)
+if S.h then sd(S.h)end if S.b then sd(S.b)end
+if not p or not p:IsA("BasePart")then S.h=nil S.b=nil return end
+local b=bb(p)S.b=b
+local r=S.m=="Rotate"
+local h=Instance.new(r and"ArcHandles"or"Handles")
+h.Adornee=b
+h.Parent=L:FindFirstChildOfClass("PlayerGui")or L.PlayerGui
+h.MouseButton1Down:Connect(function()S.i=true S.f=b.CFrame lc()end)
+h.MouseButton1Up:Connect(function()S.i=false S.f=nil uc()end)
+if r then
+local A={[Enum.Axis.X]=Vector3.xAxis,[Enum.Axis.Y]=Vector3.yAxis,[Enum.Axis.Z]=Vector3.zAxis}
+h.MouseDrag:Connect(function(a,d)
+if not S.f or not S.a then return end
+local x=A[a]if not x then return end
+local v=d*S.s
+if S.re and S.sr~=0 then v=rd(v,dr(S.sr))end
+local n=S.f*CFrame.fromAxisAngle(x,v)
+S.b.CFrame=n S.a.CFrame=n
+end)
+else
+h.MouseDrag:Connect(function(f,d)
+if not S.f or not S.a then return end
+local w=S.f:VectorToWorldSpace(Vector3.FromNormalId(f))
+local v=d*S.s
+if S.se and S.sm~=0 then v=rd(v,S.sm)end
+local n=S.f+w*v
+S.b.CFrame=n S.a.CFrame=n
+end)
+end
+S.h=h
+end
+function G.Mode(m)if m~="Move"and m~="Rotate"then error("Gizmo.Mode")end S.m=m if S.a then sh(S.a)end end
+function G.GetMode()return S.m end
+function G.Select(p)
+if not p then if S.h then sd(S.h)end if S.b then sd(S.b)end S.h=nil S.b=nil S.a=nil cc() uc() return end
+if not p:IsA("BasePart")then error("Gizmo.Select")end
+if S.a==p then sh(p)return end
+if S.h then sd(S.h)end if S.b then sd(S.b)end cc()
+S.a=p sh(p)
+ec(p:GetPropertyChangedSignal("Size"):Connect(function()if S.b and S.a==p then S.b.Size=p.Size end end))
+ec(p:GetPropertyChangedSignal("Parent"):Connect(function()if not p:IsDescendantOf(workspace)then G.Select()end end))
+local al al=R.Heartbeat:Connect(function()if not p.Parent then G.Select() if al then pcall(function()al:Disconnect()end)end end end)ec(al)
+end
+function G.Selected()return S.a and{S.a}or{}end
+function G.Snap(m,v)
+v=tonumber(v)or 0
+if m=="Move"then S.sm=v S.se=v~=0
+elseif m=="Rotate"then S.sr=v S.re=v~=0
+else error("Gizmo.Snap")end
+end
+function G.SetSnapEnabled(m,e)
+e=not not e
+if m=="Move"then S.se=e
+elseif m=="Rotate"then S.re=e
+else error("Gizmo.SetSnapEnabled")end
+end
+function G.Sensitivity(v)S.s=tonumber(v)or 1 end
+function G.SetCameraLock(e)S.cl=not not e end
+function G.Move(d,a)
+if not S.a then return end
+local x=a.Unit or a
+local v=d*S.s
+if S.se and S.sm~=0 then v=rd(v,S.sm)end
+local n=S.a.CFrame+x*v
+S.a.CFrame=n if S.b then S.b.CFrame=n end
+end
+function G.Rotate(d,a)
+if not S.a then return end
+local x=a.Unit or a
+local v=d*S.s
+if S.re and S.sr~=0 then v=rd(v,dr(S.sr))end
+local n=S.a.CFrame*CFrame.fromAxisAngle(x,v)
+S.a.CFrame=n if S.b then S.b.CFrame=n end
+end
+function G.GetActivePart()return S.a end
+R.RenderStepped:Connect(function()
+if not S.a or not S.b then return end
+if S.b.Size~=S.a.Size then S.b.Size=S.a.Size end
+if not S.i then S.b.CFrame=S.a.CFrame end
+end)
+return G
