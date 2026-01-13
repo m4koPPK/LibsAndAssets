@@ -1,0 +1,39 @@
+local P=game:GetService("Players")
+return(function()
+local S,M,C={}, {}, {}
+local function U(p)
+    local n=p.Name
+    for s,o in next,S do if o~="" and o==n then M[n]=s return end end
+    M[n]=nil
+end
+local function UA() for _,p in ipairs(P:GetPlayers()) do U(p) end end
+for i=1,8 do
+    local s=workspace:FindFirstChild("Spawn"..i)
+    if s then
+        local o=s:FindFirstChild("Owner")
+        if o and o:IsA("StringValue") then
+            S[s]=o.Value
+            C[#C+1]=o:GetPropertyChangedSignal("Value"):Connect(function()
+                S[s]=o.Value;UA()
+            end)
+        end
+    end
+end
+for _,p in ipairs(P:GetPlayers()) do
+    U(p)
+    C[#C+1]=p:GetPropertyChangedSignal("Name"):Connect(function()U(p)end)
+end
+C[#C+1]=P.PlayerAdded:Connect(function(p)
+    U(p)
+    C[#C+1]=p:GetPropertyChangedSignal("Name"):Connect(function()U(p)end)
+end)
+C[#C+1]=P.PlayerRemoving:Connect(function(p)M[p.Name]=nil end)
+return{
+    GetSpawn=function(_,n)return M[n]end,
+    GetAllSpawns=function()return S end,
+    Destroy=function()
+        for _,c in ipairs(C) do c:Disconnect() end
+        table.clear(C);table.clear(S);table.clear(M)
+    end
+}
+end)()
